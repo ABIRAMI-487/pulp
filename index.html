@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pulp — real fruit, zero sugar crash</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#1B1230;
+    --cream:#FFF9F0;
+    --citrus:#E8FF6B;
+    --coral:#FF6F5E;
+    --sky:#6EC6FF;
+    --grape:#8B5CF6;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    background:var(--cream);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.wordmark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    line-height:1.05;
+  }
+  a{ color:inherit; text-decoration:none; }
+  img{ max-width:100%; display:block; }
+  button{ font-family:inherit; cursor:pointer; border:none; }
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:var(--cream);
+    border-bottom:2px solid var(--ink);
+  }
+  .nav-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 32px;
+    max-width:1180px; margin:0 auto;
+  }
+  .wordmark{ font-size:1.6rem; letter-spacing:-0.02em; }
+  .wordmark span{ color:var(--coral); }
+  .nav-links{ display:flex; gap:36px; font-weight:500; font-size:0.95rem; }
+  .nav-links a{ position:relative; padding-bottom:4px; }
+  .nav-links a::after{
+    content:''; position:absolute; left:0; bottom:0; width:0; height:2px;
+    background:var(--ink); transition:width .25s ease;
+  }
+  .nav-links a:hover::after{ width:100%; }
+  .btn{
+    background:var(--ink); color:var(--cream);
+    padding:11px 22px; border-radius:999px; font-weight:600; font-size:0.9rem;
+    display:inline-block; transition:transform .2s ease, background .2s ease;
+  }
+  .btn:hover{ background:var(--grape); transform:translateY(-2px); }
+  .btn-outline{
+    background:transparent; border:2px solid var(--ink); color:var(--ink);
+  }
+  .btn-outline:hover{ background:var(--ink); color:var(--cream); }
+  .nav-toggle{ display:none; background:none; font-size:1.6rem; }
+
+  .cart-btn{
+    position:relative; background:var(--ink); color:var(--cream);
+    width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .cart-btn:hover{ background:var(--grape); transform:translateY(-2px); }
+  .cart-btn svg{ width:20px; height:20px; }
+  .cart-count{
+    position:absolute; top:-4px; right:-4px; background:var(--citrus); color:var(--ink);
+    font-size:0.68rem; font-weight:700; width:19px; height:19px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .nav-actions{ display:flex; align-items:center; gap:14px; }
+
+  /* ---------- CART DRAWER ---------- */
+  .cart-overlay{
+    position:fixed; inset:0; background:rgba(27,18,48,0.5); z-index:90;
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .cart-overlay.open{ opacity:1; pointer-events:auto; }
+  .cart-drawer{
+    position:fixed; top:0; right:0; height:100%; width:380px; max-width:88vw;
+    background:var(--cream); z-index:91; box-shadow:-10px 0 40px rgba(27,18,48,0.25);
+    display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
+  }
+  .cart-drawer.open{ transform:translateX(0); }
+  .cart-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:22px 24px; border-bottom:2px solid var(--ink);
+  }
+  .cart-head h3{ font-size:1.3rem; }
+  .cart-close{ background:none; font-size:1.4rem; color:var(--ink); line-height:1; }
+  .cart-items{ flex:1; overflow-y:auto; padding:16px 24px; }
+  .cart-empty{ color:#6b6280; font-size:0.95rem; margin-top:20px; }
+  .cart-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 0; border-bottom:1px solid rgba(27,18,48,0.12); gap:10px;
+  }
+  .cart-item-name{ font-weight:600; font-size:0.95rem; }
+  .cart-item-price{ font-size:0.85rem; color:#6b6280; margin-top:2px; }
+  .qty-controls{ display:flex; align-items:center; gap:10px; }
+  .qty-btn{
+    width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--cream);
+    font-size:1rem; display:flex; align-items:center; justify-content:center;
+  }
+  .qty-btn:hover{ background:var(--grape); }
+  .cart-foot{ padding:20px 24px 26px; border-top:2px solid var(--ink); }
+  .cart-subtotal{ display:flex; justify-content:space-between; font-weight:700; font-size:1.05rem; margin-bottom:14px; }
+  .checkout-btn{
+    width:100%; background:var(--ink); color:var(--cream); padding:14px; border-radius:999px;
+    font-weight:600; font-size:0.95rem; transition:background .2s ease;
+  }
+  .checkout-btn:hover{ background:var(--grape); }
+  .checkout-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .checkout-msg{ margin-top:12px; font-size:0.85rem; color:#3c9d4a; text-align:center; min-height:1.2em; }
+
+  .add-cart-btn{
+    margin-top:12px; width:100%; background:var(--cream); color:var(--ink);
+    padding:9px 0; border-radius:999px; font-weight:600; font-size:0.82rem;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .add-cart-btn:hover{ background:var(--citrus); transform:translateY(-1px); }
+  .add-cart-btn.added{ background:var(--citrus); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    display:grid; grid-template-columns:1.1fr 0.9fr; align-items:center;
+    gap:40px; padding:80px 32px 60px; max-width:1180px; margin:0 auto;
+  }
+  .hero-thumb{
+    width:130px; height:90px; object-fit:cover; border-radius:14px;
+    margin-bottom:18px; box-shadow:0 12px 24px -12px rgba(27,18,48,0.35);
+  }
+  .hero h1{
+    font-size:clamp(2.6rem, 5.5vw, 4.4rem);
+    letter-spacing:-0.02em;
+  }
+  .hero p.lede{
+    margin-top:22px; font-size:1.15rem; max-width:46ch; color:#3c3450;
+  }
+  .hero-ctas{ margin-top:34px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .hero-note{ margin-top:18px; font-size:0.88rem; color:#6b6280; }
+
+  .can-stage{
+    position:relative; height:460px; display:flex; align-items:center; justify-content:center;
+    border-radius:24px; overflow:hidden;
+    background-image:
+      linear-gradient(160deg, rgba(255,249,240,0.88), rgba(255,249,240,0.94)),
+      url('https://images.unsplash.com/photo-1558470622-bd37a3c489e7?fm=jpg&q=70&w=1200&auto=format&fit=crop');
+    background-size:cover; background-position:center;
+  }
+  .can{
+    position:relative; width:150px; height:340px; border-radius:70px 70px 26px 26px;
+    background:linear-gradient(160deg, var(--coral), var(--grape));
+    box-shadow:0 30px 60px -20px rgba(27,18,48,0.45);
+    transform:rotate(-6deg);
+    transition:background 0.5s ease;
+  }
+  .can::before{
+    content:''; position:absolute; top:26px; left:14px; right:14px; bottom:70px;
+    background:rgba(255,249,240,0.14); border-radius:40px;
+  }
+  .can-label{
+    position:absolute; top:130px; left:0; right:0; text-align:center;
+    color:var(--cream); font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:1.3rem; letter-spacing:-0.01em;
+  }
+  .bubble{
+    position:absolute; border-radius:50%; background:var(--citrus);
+    opacity:0.85; animation:rise 4.5s linear infinite;
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) scale(1); opacity:0.9; }
+    100%{ transform:translateY(-380px) scale(0.4); opacity:0; }
+  }
+
+  /* ---------- COMPARISON ---------- */
+  .compare{
+    background:var(--ink); color:var(--cream); padding:70px 32px;
+  }
+  .compare-inner{
+    max-width:1180px; margin:0 auto; display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:center;
+  }
+  .compare h2{ font-size:clamp(1.8rem,3.4vw,2.6rem); color:var(--cream); }
+  .compare p{ margin-top:16px; color:#cfc7e6; max-width:42ch; }
+  .bars{ display:flex; flex-direction:column; gap:22px; }
+  .bar-row{ display:grid; grid-template-columns:110px 1fr 50px; align-items:center; gap:14px; }
+  .bar-label{ font-size:0.92rem; color:#cfc7e6; }
+  .bar-track{ background:rgba(255,249,240,0.12); border-radius:999px; height:14px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:999px; width:0; transition:width 1.4s cubic-bezier(.2,.8,.2,1); }
+  .bar-value{ font-size:0.92rem; font-weight:600; text-align:right; }
+
+  /* ---------- FLAVORS ---------- */
+  .flavors{ padding:90px 32px; max-width:1180px; margin:0 auto; }
+  .section-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:40px; }
+  .section-head h2{ font-size:clamp(1.9rem,3.6vw,2.6rem); }
+  .section-head p{ max-width:38ch; color:#6b6280; }
+  .flavor-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:18px; }
+  .flavor-card{
+    position:relative; border-radius:20px; padding:22px 18px; min-height:270px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    cursor:pointer; border:2px solid transparent;
+    transition:transform .2s ease, border-color .2s ease;
+    color:var(--cream);
+    background-size:cover; background-position:center;
+    isolation:isolate;
+    overflow:hidden;
+  }
+  .flavor-card::before{
+    content:''; position:absolute; inset:0; z-index:-1;
+    background:linear-gradient(200deg, rgba(27,18,48,0.15) 0%, rgba(27,18,48,0.78) 78%);
+  }
+  .flavor-card:hover{ transform:translateY(-6px); }
+  .flavor-card.active{ border-color:var(--cream); box-shadow:0 0 0 4px rgba(27,18,48,0.9); }
+  .flavor-card h3{ font-size:1.2rem; }
+  .flavor-card .desc{ font-size:0.82rem; font-weight:400; opacity:0.92; margin-top:8px; line-height:1.45; }
+  .flavor-card .meta-row{ display:flex; justify-content:space-between; align-items:baseline; margin-top:18px; }
+  .flavor-card .sugar{ font-size:0.85rem; font-weight:600; }
+  .flavor-card .price{ font-size:0.95rem; font-weight:700; }
+
+  @media (max-width:900px){
+    .flavor-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+
+  /* ---------- FLAVOR LIGHTBOX ---------- */
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(27,18,48,0.92); z-index:120;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .lightbox-overlay.open{ opacity:1; pointer-events:auto; }
+  .lightbox-box{
+    position:relative; width:100%; max-width:480px;
+    transform:translateY(10px); transition:transform .25s ease;
+  }
+  .lightbox-overlay.open .lightbox-box{ transform:translateY(0); }
+  .lightbox-box img{
+    width:100%; max-height:70vh; object-fit:cover; border-radius:22px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .lightbox-info{
+    background:var(--cream); border-radius:0 0 22px 22px; margin-top:-8px;
+    padding:20px 22px 22px; position:relative; z-index:1;
+  }
+  .lightbox-info h3{ font-size:1.3rem; }
+  .lightbox-info .desc{ margin-top:6px; font-size:0.92rem; color:#6b6280; line-height:1.5; }
+  .lightbox-info .meta-row{ display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; }
+  .lightbox-info .sugar{ font-size:0.88rem; font-weight:600; color:var(--ink); }
+  .lightbox-info .price{ font-size:1rem; font-weight:700; color:var(--ink); }
+  .lightbox-close{
+    position:absolute; top:-18px; right:-6px; width:40px; height:40px; border-radius:50%;
+    background:var(--cream); color:var(--ink); font-size:1.3rem; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 18px rgba(0,0,0,0.35); z-index:2;
+  }
+  .lightbox-close:hover{ background:var(--citrus); }
+
+  /* ---------- INGREDIENTS ---------- */
+  .inside{
+    padding:90px 32px;
+    background-image:
+      linear-gradient(200deg, rgba(110,198,255,0.88), rgba(110,198,255,0.94)),
+      url('https://images.unsplash.com/photo-1604281293588-6cb784a25d74?fm=jpg&q=60&w=1600&auto=format&fit=crop');
+    background-size:cover; background-position:center;
+  }
+  .inside-inner{ max-width:1180px; margin:0 auto; display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:center; }
+  .inside h2{ font-size:clamp(1.9rem,3.6vw,2.6rem); }
+  .inside p.lede{ margin-top:16px; max-width:40ch; color:#132; color:#1B1230; opacity:0.8; }
+  .ing-list{ display:flex; flex-direction:column; gap:0; }
+  .ing-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:20px 0; border-bottom:2px solid rgba(27,18,48,0.15);
+  }
+  .ing-row:first-child{ border-top:2px solid rgba(27,18,48,0.15); }
+  .ing-name{ font-weight:600; font-size:1.05rem; }
+  .ing-desc{ font-size:0.9rem; color:#382f52; max-width:32ch; text-align:right; }
+
+  /* ---------- SOCIAL PROOF MARQUEE ---------- */
+  .proof{ padding:90px 0; }
+  .proof .section-head{ padding:0 32px; max-width:1180px; margin:0 auto 40px; }
+  .marquee{
+    overflow:hidden; position:relative;
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .marquee-track{
+    display:flex; gap:20px; width:max-content;
+    animation:scroll 32s linear infinite;
+  }
+  .marquee:hover .marquee-track{ animation-play-state:paused; }
+  @keyframes scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .quote-card{
+    background:var(--cream); border:2px solid var(--ink); border-radius:18px;
+    padding:24px; width:300px; flex:0 0 auto;
+  }
+  .quote-card p{ font-size:0.98rem; }
+  .quote-card .who{ margin-top:16px; font-size:0.85rem; font-weight:600; color:#6b6280; }
+
+  /* ---------- CTA BANNER ---------- */
+  .cta-banner{
+    background:var(--grape); color:var(--cream); padding:80px 32px; text-align:center;
+  }
+  .cta-banner h2{ font-size:clamp(2rem,4.5vw,3.2rem); max-width:18ch; margin:0 auto; }
+  .cta-banner p{ margin-top:16px; color:#e9e2ff; }
+  .code-box{
+    margin:30px auto 0; display:inline-flex; align-items:center; gap:14px;
+    background:rgba(255,249,240,0.12); border:2px dashed var(--cream);
+    border-radius:14px; padding:14px 20px;
+  }
+  .code-box strong{ font-family:'Space Grotesk',sans-serif; letter-spacing:0.04em; }
+  .copy-btn{
+    background:var(--citrus); color:var(--ink); padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.85rem;
+  }
+  .cta-banner .btn{ margin-top:30px; background:var(--cream); color:var(--ink); }
+  .cta-banner .btn:hover{ background:var(--citrus); }
+
+  /* ---------- FOOTER / NEWSLETTER ---------- */
+  footer{ background:var(--ink); color:var(--cream); padding:70px 32px 30px; }
+
+  /* ---------- VISIT US ---------- */
+  .visit{ padding:80px 32px; background:var(--cream); }
+  .visit-inner{
+    max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:40px;
+    background:var(--grape); border-radius:20px; padding:44px; color:var(--cream);
+  }
+  .visit h2{ font-size:clamp(1.7rem,3vw,2.2rem); color:var(--cream); }
+  .visit-inner p{ color:#e9e2ff; margin-top:10px; }
+  .visit-detail{ margin-top:22px; }
+  .visit-detail .label{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#cdbcf5; margin-bottom:4px; }
+  .visit-detail .value{ font-size:1rem; font-weight:600; }
+  .visit-map-link{
+    margin-top:26px; display:inline-block; background:var(--citrus); color:var(--ink);
+    padding:11px 22px; border-radius:999px; font-weight:600; font-size:0.9rem;
+  }
+  .visit-map-link:hover{ background:var(--cream); }
+  .footer-inner{
+    max-width:1180px; margin:0 auto; display:grid; grid-template-columns:1.1fr 0.9fr; gap:60px;
+  }
+  footer h3{ font-size:1.5rem; }
+  footer p{ color:#cfc7e6; margin-top:12px; max-width:34ch; }
+  .newsletter-form{ display:flex; gap:10px; margin-top:24px; max-width:380px; }
+  .newsletter-form input{
+    flex:1; padding:13px 16px; border-radius:999px; border:none; font-family:inherit; font-size:0.9rem;
+  }
+  .newsletter-form button{
+    background:var(--citrus); color:var(--ink); padding:13px 20px; border-radius:999px; font-weight:600; font-size:0.9rem;
+  }
+  .form-msg{ margin-top:12px; font-size:0.85rem; color:var(--citrus); min-height:1.2em; }
+  .footer-links{ display:flex; flex-direction:column; gap:10px; }
+  .footer-links a{ color:#cfc7e6; font-size:0.95rem; }
+  .footer-links a:hover{ color:var(--cream); }
+  .footer-bottom{
+    max-width:1180px; margin:50px auto 0; padding-top:20px; border-top:1px solid rgba(255,249,240,0.15);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.82rem; color:#9084a8;
+  }
+
+  @media (max-width:820px){
+    .hero{ grid-template-columns:1fr; padding-top:50px; }
+    .can-stage{ height:320px; order:-1; }
+    .compare-inner, .inside-inner, .footer-inner, .visit-inner{ grid-template-columns:1fr; }
+    .flavor-grid{ grid-template-columns:1fr 1fr; }
+    .nav-links{ display:none; }
+    .ing-row{ flex-direction:column; align-items:flex-start; gap:6px; }
+    .ing-desc{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="wordmark">pulp<span>.</span></div>
+    <div class="nav-links">
+      <a href="#flavors">Flavors</a>
+      <a href="#inside">What's inside</a>
+      <a href="#proof">Reviews</a>
+    </div>
+    <div class="nav-actions">
+      <a href="#shop" class="btn">Shop pulp</a>
+      <button class="cart-btn" id="cartToggle" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="cart-overlay" id="cartOverlay"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <h3>Your cart</h3>
+    <button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <p class="cart-empty" id="cartEmptyMsg">Your cart is empty — add a flavor to get started.</p>
+  </div>
+  <div class="cart-foot">
+    <div class="cart-subtotal"><span>Subtotal</span><span id="cartSubtotal">₹0</span></div>
+    <button class="checkout-btn" id="checkoutBtn" disabled>Checkout</button>
+    <div class="checkout-msg" id="checkoutMsg"></div>
+  </div>
+</aside>
+
+<section class="hero">
+  <div>
+    <img class="hero-thumb" src="https://images.unsplash.com/photo-1594975631657-904804a44e4d?fm=jpg&q=70&w=500&auto=format&fit=crop" alt="Freshly poured pulp juice">
+    <h1>Ditch the sugar spiral, keep the fizz.</h1>
+    <p class="lede">pulp is sparkling fruit juice cut with real ingredients — no crash, no 39 grams of sugar, no weird aftertaste. Just the drink you'd actually crave at 3pm.</p>
+    <div class="hero-ctas">
+      <a href="#shop" class="btn">Try pulp — ₹499 for a starter pack of 4</a>
+      <a href="#flavors" class="btn btn-outline">See flavors</a>
+    </div>
+    <p class="hero-note">As low as 2g sugar · brewed with adaptogens, not apologies</p>
+  </div>
+  <div class="can-stage" id="canStage">
+    <div class="can" id="heroCan">
+      <div class="can-label" id="canLabel">mango<br>chili</div>
+    </div>
+  </div>
+</section>
+
+<section class="compare">
+  <div class="compare-inner">
+    <div>
+      <h2>The math your soda doesn't want you to see.</h2>
+      <p>One can of pulp has less sugar than an apple. One can of regular soda has more sugar than three donuts. We checked.</p>
+    </div>
+    <div class="bars" id="bars">
+      <div class="bar-row">
+        <div class="bar-label">Regular soda</div>
+        <div class="bar-track"><div class="bar-fill" data-width="100%" style="background:var(--coral);"></div></div>
+        <div class="bar-value">39g</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">"Diet" energy drink</div>
+        <div class="bar-track"><div class="bar-fill" data-width="60%" style="background:var(--sky);"></div></div>
+        <div class="bar-value">23g</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">pulp</div>
+        <div class="bar-track"><div class="bar-fill" data-width="10%" style="background:var(--citrus);"></div></div>
+        <div class="bar-value">4g</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="flavors" id="flavors">
+  <div class="section-head">
+    <h2>15 flavors. Zero regrets.</h2>
+    <p>Tap a can to preview it. Every flavor is built around one real fruit, one Indian twist, and one thing that makes it interesting.</p>
+  </div>
+  <div class="flavor-grid" id="flavorGrid">
+
+    <div class="flavor-card active" style="background-image:url('https://images.unsplash.com/photo-1604281293588-6cb784a25d74?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1604281293588-6cb784a25d74?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#FF6F5E" data-color2="#8B5CF6" data-name="mango chili" data-price="149">
+      <div>
+        <h3>Mango Chili</h3>
+        <p class="desc">Ripe Alphonso mango cut with a sharp chili-lime kick — sweet up front, warm on the finish.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">4g sugar</div><div class="price">₹149</div></div>
+      <button class="add-cart-btn" data-flavor="Mango Chili">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1755446400812-9d050c017c40?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1755446400812-9d050c017c40?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#8B5CF6" data-color2="#6EC6FF" data-name="blackberry basil" data-price="159">
+      <div>
+        <h3>Blackberry Basil</h3>
+        <p class="desc">Wild blackberry deepened with fresh basil — moody, herbal, a little grown-up.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹159</div></div>
+      <button class="add-cart-btn" data-flavor="Blackberry Basil">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1758738880933-b5fcb1ba0dcb?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1758738880933-b5fcb1ba0dcb?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#6EC6FF" data-color2="#E8FF6B" data-name="ginger lime" data-price="135">
+      <div>
+        <h3>Ginger Lime</h3>
+        <p class="desc">Cold-pressed ginger and fresh lime — sharp enough to wake you up, no caffeine needed.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">2g sugar</div><div class="price">₹135</div></div>
+      <button class="add-cart-btn" data-flavor="Ginger Lime">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1564829439675-0eec72f0b695?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1564829439675-0eec72f0b695?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#E8FF6B" data-color2="#FF6F5E" data-name="watermelon mint" data-price="145">
+      <div>
+        <h3>Watermelon Mint</h3>
+        <p class="desc">Watermelon juice with a whisper of mint — biting into a slice on a hot day, bottled.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹145</div></div>
+      <button class="add-cart-btn" data-flavor="Watermelon Mint">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1574709755755-1699988a9c82?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1574709755755-1699988a9c82?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#FF6F5E" data-color2="#1B1230" data-name="pomegranate rose" data-price="165">
+      <div>
+        <h3>Pomegranate Rose</h3>
+        <p class="desc">Fresh pomegranate with a light rose water finish — festive, floral, never syrupy.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">4g sugar</div><div class="price">₹165</div></div>
+      <button class="add-cart-btn" data-flavor="Pomegranate Rose">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1693399991519-bef70bed19a2?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1693399991519-bef70bed19a2?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#FF6F5E" data-color2="#E8FF6B" data-name="guava chaat masala" data-price="139">
+      <div>
+        <h3>Guava Chaat Masala</h3>
+        <p class="desc">Pink guava dusted with chaat masala — sweet, tangy, unmistakably Chennai.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹139</div></div>
+      <button class="add-cart-btn" data-flavor="Guava Chaat Masala">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1526333649903-b80842e5c2e0?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1526333649903-b80842e5c2e0?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#E8FF6B" data-color2="#FF6F5E" data-name="pineapple turmeric" data-price="149">
+      <div>
+        <h3>Pineapple Turmeric</h3>
+        <p class="desc">Pineapple juice with a pinch of turmeric and black pepper — tropical with a functional edge.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">4g sugar</div><div class="price">₹149</div></div>
+      <button class="add-cart-btn" data-flavor="Pineapple Turmeric">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1488551511020-571c741f122a?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1488551511020-571c741f122a?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#FF6F5E" data-color2="#6EC6FF" data-name="strawberry basil" data-price="155">
+      <div>
+        <h3>Strawberry Basil</h3>
+        <p class="desc">Strawberry puree balanced with basil leaf — a farmer's market in a can.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹155</div></div>
+      <button class="add-cart-btn" data-flavor="Strawberry Basil">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#E8FF6B" data-color2="#8B5CF6" data-name="orange cardamom" data-price="129">
+      <div>
+        <h3>Orange Cardamom</h3>
+        <p class="desc">Fresh orange juice warmed with a hint of cardamom — your favourite chai, cold and fizzy.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">4g sugar</div><div class="price">₹129</div></div>
+      <button class="add-cart-btn" data-flavor="Orange Cardamom">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.pexels.com/photos/6870816/pexels-photo-6870816.jpeg?auto=compress&cs=tinysrgb&w=800');" data-image="https://images.pexels.com/photos/6870816/pexels-photo-6870816.jpeg?auto=compress&cs=tinysrgb&w=1200" data-color1="#6EC6FF" data-color2="#FF6F5E" data-name="lychee rose" data-price="175">
+      <div>
+        <h3>Lychee Rose</h3>
+        <p class="desc">Lychee juice with a soft rose note — light, fragrant, our most-gifted flavor.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">5g sugar</div><div class="price">₹175</div></div>
+      <button class="add-cart-btn" data-flavor="Lychee Rose">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1730390774172-6e1161b3e6a6?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1730390774172-6e1161b3e6a6?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#8B5CF6" data-color2="#6EC6FF" data-name="kokum mint" data-price="135">
+      <div>
+        <h3>Kokum Mint</h3>
+        <p class="desc">Kokum sharbat base with fresh mint — a Konkan coast classic, made sparkling.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">2g sugar</div><div class="price">₹135</div></div>
+      <button class="add-cart-btn" data-flavor="Kokum Mint">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1558687162-06005218c936?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1558687162-06005218c936?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#8B5CF6" data-color2="#1B1230" data-name="jamun ginger" data-price="149">
+      <div>
+        <h3>Jamun Ginger</h3>
+        <p class="desc">Purple jamun juice with a ginger kick — earthy, tangy, monsoon-inspired.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹149</div></div>
+      <button class="add-cart-btn" data-flavor="Jamun Ginger">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1642961249179-00c45303ef7d?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1642961249179-00c45303ef7d?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#E8FF6B" data-color2="#1B1230" data-name="passionfruit chili" data-price="165">
+      <div>
+        <h3>Passionfruit Chili</h3>
+        <p class="desc">Passionfruit pulp with a chili-salt edge — tart, tropical, a little dangerous.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">4g sugar</div><div class="price">₹165</div></div>
+      <button class="add-cart-btn" data-flavor="Passionfruit Chili">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1567805792275-f06dac23b338?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1567805792275-f06dac23b338?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#6EC6FF" data-color2="#8B5CF6" data-name="blueberry lavender" data-price="159">
+      <div>
+        <h3>Blueberry Lavender</h3>
+        <p class="desc">Blueberry juice with a hint of lavender — quiet, floral, good with a book.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">3g sugar</div><div class="price">₹159</div></div>
+      <button class="add-cart-btn" data-flavor="Blueberry Lavender">Add to cart</button>
+    </div>
+
+    <div class="flavor-card" style="background-image:url('https://images.unsplash.com/photo-1558490946-2cf6cab78c60?fm=jpg&q=70&w=800&auto=format&fit=crop');" data-image="https://images.unsplash.com/photo-1558490946-2cf6cab78c60?fm=jpg&q=80&w=1200&auto=format&fit=crop" data-color1="#E8FF6B" data-color2="#6EC6FF" data-name="nimbu pudina" data-price="125">
+      <div>
+        <h3>Nimbu Pudina</h3>
+        <p class="desc">Fresh lime and mint, the way roadside stalls make it — just colder, and sparkling.</p>
+      </div>
+      <div class="meta-row"><div class="sugar">2g sugar</div><div class="price">₹125</div></div>
+      <button class="add-cart-btn" data-flavor="Nimbu Pudina">Add to cart</button>
+    </div>
+
+  </div>
+</section>
+
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <div class="lightbox-box">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-info">
+      <h3 id="lightboxName"></h3>
+      <p class="desc" id="lightboxDesc"></p>
+      <div class="meta-row">
+        <div class="sugar" id="lightboxSugar"></div>
+        <div class="price" id="lightboxPrice"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="inside" id="inside">
+  <div class="inside-inner">
+    <div>
+      <h2>What's actually inside.</h2>
+      <p class="lede">No proprietary blends, no mystery gums. If we can't explain an ingredient in one sentence, it doesn't go in the can.</p>
+    </div>
+    <div class="ing-list">
+      <div class="ing-row"><div class="ing-name">Cold-pressed fruit juice</div><div class="ing-desc">Real fruit, not "natural flavor"</div></div>
+      <div class="ing-row"><div class="ing-name">Sparkling water</div><div class="ing-desc">The fizz, with nothing added</div></div>
+      <div class="ing-row"><div class="ing-name">Monk fruit + a touch of cane sugar</div><div class="ing-desc">Sweet without the crash</div></div>
+      <div class="ing-row"><div class="ing-name">Adaptogens</div><div class="ing-desc">Ashwagandha or L-theanine, flavor-dependent</div></div>
+      <div class="ing-row"><div class="ing-name">Nothing artificial</div><div class="ing-desc">No dyes, no preservatives, no fake sweeteners</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="proof" id="proof">
+  <div class="section-head">
+    <h2>People who switched and didn't switch back.</h2>
+    <p>Real notes from people who tried pulp instead of their usual can.</p>
+  </div>
+  <div class="marquee">
+    <div class="marquee-track" id="marqueeTrack">
+      <div class="quote-card"><p>Genuinely stopped buying soda after the first case. Ginger Lime lives in my fridge now.</p><div class="who">— Priya, 24</div></div>
+      <div class="quote-card"><p>Tastes like a drink, not like "health food." That's all I wanted.</p><div class="who">— Marcus, 21</div></div>
+      <div class="quote-card"><p>The mango chili one is unreasonably good with tequila. Also good without it.</p><div class="who">— Dana, 27</div></div>
+      <div class="quote-card"><p>No 4pm crash anymore. Didn't expect a drink to fix my afternoons.</p><div class="who">— Leo, 23</div></div>
+      <div class="quote-card"><p>Genuinely stopped buying soda after the first case. Ginger Lime lives in my fridge now.</p><div class="who">— Priya, 24</div></div>
+      <div class="quote-card"><p>Tastes like a drink, not like "health food." That's all I wanted.</p><div class="who">— Marcus, 21</div></div>
+      <div class="quote-card"><p>The mango chili one is unreasonably good with tequila. Also good without it.</p><div class="who">— Dana, 27</div></div>
+      <div class="quote-card"><p>No 4pm crash anymore. Didn't expect a drink to fix my afternoons.</p><div class="who">— Leo, 23</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-banner" id="shop">
+  <h2>Your first case is 20% off.</h2>
+  <p>Mix all four flavors. Cancel the subscription anytime, no hoops.</p>
+  <div class="code-box">
+    <span>Use code <strong id="promoCode">FIRSTCAN</strong></span>
+    <button class="copy-btn" id="copyBtn">Copy code</button>
+  </div>
+  <br>
+  <button class="btn" id="mixedCaseBtn" data-flavor="Mixed Case (6-pack, mixed flavors)" data-price="799">Shop the mixed case — ₹799</button>
+</section>
+
+<section class="visit">
+  <div class="visit-inner">
+    <div>
+      <h2>Come find us in Mylapore.</h2>
+      <p>Our first taproom — grab a cold can, refill a growler, or just hang out with people who also think soda deserves better.</p>
+      <a class="visit-map-link" href="https://www.google.com/maps/search/?api=1&query=42+Kutchery+Road%2C+Mylapore%2C+Chennai%2C+Tamil+Nadu+600004" target="_blank" rel="noopener">Get directions</a>
+    </div>
+    <div>
+      <div class="visit-detail">
+        <div class="label">Address</div>
+        <div class="value">42, Kutchery Road, Mylapore, Chennai, Tamil Nadu 600004</div>
+      </div>
+      <div class="visit-detail">
+        <div class="label">Hours</div>
+        <div class="value">Mon–Sun, 10:00 AM – 9:00 PM</div>
+      </div>
+      <div class="visit-detail">
+        <div class="label">Phone</div>
+        <div class="value">+91 98765 43210</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <h3>Stay in the loop.</h3>
+      <p>New flavors, restocks, and the occasional discount code. No spam, we promise — we drink our own product, not your inbox.</p>
+      <form class="newsletter-form" id="newsletterForm">
+        <input type="email" id="emailInput" placeholder="you@email.com" required>
+        <button type="submit">Join</button>
+      </form>
+      <div class="form-msg" id="formMsg"></div>
+    </div>
+    <div class="footer-links">
+      <a href="#flavors">Flavors</a>
+      <a href="#inside">What's inside</a>
+      <a href="#proof">Reviews</a>
+      <a href="#shop">Shop</a>
+      <a href="#">Instagram</a>
+      <a href="#">TikTok</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>© 2026 pulp beverage co. — 42, Kutchery Road, Mylapore, Chennai 600004</div>
+    <div>Made for people who still want a fun drink.</div>
+  </div>
+</footer>
+
+<script>
+  // Animate sugar comparison bars when they scroll into view
+  const bars = document.querySelectorAll('.bar-fill');
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.width = entry.target.dataset.width;
+        barObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  bars.forEach(b => barObserver.observe(b));
+
+  // Rising bubbles inside the hero can stage
+  const canStage = document.getElementById('canStage');
+  function spawnBubble(){
+    const bubble = document.createElement('div');
+    bubble.classList.add('bubble');
+    const size = 6 + Math.random() * 10;
+    bubble.style.width = size + 'px';
+    bubble.style.height = size + 'px';
+    bubble.style.left = (60 + Math.random() * 140) + 'px';
+    bubble.style.bottom = '40px';
+    bubble.style.animationDuration = (3 + Math.random() * 2) + 's';
+    canStage.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 5000);
+  }
+  setInterval(spawnBubble, 450);
+
+  // Flavor card selection updates the hero can's color + label, and opens a full-image lightbox
+  const flavorCards = document.querySelectorAll('.flavor-card');
+  const heroCan = document.getElementById('heroCan');
+  const canLabel = document.getElementById('canLabel');
+  const lightboxOverlay = document.getElementById('lightboxOverlay');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxName = document.getElementById('lightboxName');
+  const lightboxDesc = document.getElementById('lightboxDesc');
+  const lightboxSugar = document.getElementById('lightboxSugar');
+  const lightboxPrice = document.getElementById('lightboxPrice');
+  const lightboxClose = document.getElementById('lightboxClose');
+
+  function openLightbox(card){
+    const img = card.dataset.image || card.style.backgroundImage.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+    lightboxImg.src = img;
+    lightboxImg.alt = card.dataset.name || '';
+    lightboxName.textContent = card.querySelector('h3') ? card.querySelector('h3').textContent : card.dataset.name;
+    lightboxDesc.textContent = card.querySelector('.desc') ? card.querySelector('.desc').textContent : '';
+    lightboxSugar.textContent = card.querySelector('.sugar') ? card.querySelector('.sugar').textContent : '';
+    lightboxPrice.textContent = card.querySelector('.meta-row .price') ? card.querySelector('.meta-row .price').textContent : '';
+    lightboxOverlay.classList.add('open');
+  }
+  function closeLightbox(){ lightboxOverlay.classList.remove('open'); }
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+  flavorCards.forEach(card => {
+    card.addEventListener('click', () => {
+      flavorCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const c1 = card.dataset.color1;
+      const c2 = card.dataset.color2;
+      heroCan.style.background = `linear-gradient(160deg, ${c1}, ${c2})`;
+      canLabel.innerHTML = card.dataset.name.replace(' ', '<br>');
+      openLightbox(card);
+    });
+  });
+
+  // Copy promo code to clipboard
+  const copyBtn = document.getElementById('copyBtn');
+  const promoCode = document.getElementById('promoCode').textContent;
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(promoCode).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy code', 1800);
+    });
+  });
+
+  // ---------- SHOPPING CART ----------
+  let cart = []; // { flavor, price, qty }
+
+  const cartOverlay = document.getElementById('cartOverlay');
+  const cartDrawer = document.getElementById('cartDrawer');
+  const cartToggle = document.getElementById('cartToggle');
+  const cartClose = document.getElementById('cartClose');
+  const cartItemsEl = document.getElementById('cartItems');
+  const cartCountEl = document.getElementById('cartCount');
+  const cartSubtotalEl = document.getElementById('cartSubtotal');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const checkoutMsg = document.getElementById('checkoutMsg');
+
+  function openCart(){ cartOverlay.classList.add('open'); cartDrawer.classList.add('open'); }
+  function closeCart(){ cartOverlay.classList.remove('open'); cartDrawer.classList.remove('open'); }
+  cartToggle.addEventListener('click', openCart);
+  cartClose.addEventListener('click', closeCart);
+  cartOverlay.addEventListener('click', closeCart);
+
+  function addToCart(flavor, price){
+    const existing = cart.find(i => i.flavor === flavor);
+    if (existing) { existing.qty += 1; }
+    else { cart.push({ flavor, price, qty: 1 }); }
+    renderCart();
+    openCart();
+  }
+
+  function changeQty(flavor, delta){
+    const item = cart.find(i => i.flavor === flavor);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter(i => i.flavor !== flavor);
+    renderCart();
+  }
+
+  function renderCart(){
+    const totalCount = cart.reduce((sum, i) => sum + i.qty, 0);
+    cartCountEl.textContent = totalCount;
+
+    if (cart.length === 0){
+      cartItemsEl.innerHTML = '<p class="cart-empty">Your cart is empty — add a flavor to get started.</p>';
+      checkoutBtn.disabled = true;
+    } else {
+      cartItemsEl.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <div>
+            <div class="cart-item-name">${item.flavor}</div>
+            <div class="cart-item-price">₹${item.price} each</div>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn" data-action="dec" data-flavor="${item.flavor}">−</button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" data-action="inc" data-flavor="${item.flavor}">+</button>
+          </div>
+        </div>
+      `).join('');
+      checkoutBtn.disabled = false;
+    }
+
+    const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+    cartSubtotalEl.textContent = '₹' + subtotal;
+
+    cartItemsEl.querySelectorAll('.qty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = btn.dataset.action === 'inc' ? 1 : -1;
+        changeQty(btn.dataset.flavor, delta);
+      });
+    });
+  }
+
+  // Add-to-cart buttons on flavor cards
+  document.querySelectorAll('.add-cart-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // don't trigger the flavor-card hero preview click
+      const card = btn.closest('.flavor-card');
+      const flavor = btn.dataset.flavor;
+      const price = parseFloat(card.dataset.price);
+      addToCart(flavor, price);
+      btn.textContent = 'Added ✓';
+      btn.classList.add('added');
+      setTimeout(() => { btn.textContent = 'Add to cart'; btn.classList.remove('added'); }, 1400);
+    });
+  });
+
+  // Mixed case button in the CTA banner
+  document.getElementById('mixedCaseBtn').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    addToCart(btn.dataset.flavor, parseFloat(btn.dataset.price));
+  });
+
+  // Checkout (front-end demo — no real payment backend)
+  checkoutBtn.addEventListener('click', () => {
+    if (cart.length === 0) return;
+    checkoutMsg.textContent = "Order placed! Confirmation heading to your inbox.";
+    cart = [];
+    renderCart();
+    setTimeout(() => { checkoutMsg.textContent = ''; closeCart(); }, 2200);
+  });
+
+  renderCart();
+
+  const form = document.getElementById('newsletterForm');
+  const formMsg = document.getElementById('formMsg');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('emailInput').value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailPattern.test(email)) {
+      formMsg.textContent = "You're in. Check your inbox for a welcome code.";
+      form.reset();
+    } else {
+      formMsg.textContent = "That doesn't look like a valid email — try again.";
+    }
+  });
+</script>
+
+</body>
+</html>
